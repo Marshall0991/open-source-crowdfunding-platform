@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, champ_info, chronologie %}
+{% block titre %}Déclaration {{ d.reference }}{% endblock %}
+{% block contenu %}
+<nav class="mb-3 text-sm"><a href="/espace" class="lien">← Mes déclarations</a></nav>
+<div class="flex flex-wrap items-center gap-3">
+  <h1 class="text-2xl font-bold text-marine-900 sm:text-3xl">Déclaration {{ d.reference }}</h1>
+  {{ badge(d.statut) }}
+</div>
+
+{% set messages = {
+  "SOUMIS": ("border-st-soumis bg-amber-50 text-amber-950", "Votre déclaration est en cours d'examen par la Police nationale. L'IMEI n'est pas encore signalé lors des vérifications publiques."),
+  "VALIDE": ("border-st-valide bg-blue-50 text-blue-950", "Votre déclaration a été validée. L'IMEI apparaît désormais comme « Signalé » lors des vérifications publiques."),
+  "REJETE": ("border-st-rejete bg-violet-50 text-violet-950", "Votre déclaration a été rejetée. Vous pouvez déposer une nouvelle déclaration après avoir corrigé les informations ou vous être rapproché(e) du commissariat."),
+} %}
+<div class="mt-4 rounded-lg border-l-4 px-4 py-3 text-base {{ messages[d.statut][0] }}">
+  <p>{{ messages[d.statut][1] }}</p>
+  {% if d.statut == "REJETE" and d.motif_rejet %}<p class="mt-1"><strong>Motif :</strong> {{ d.motif_rejet }}</p>{% endif %}
+</div>
+
+<div class="mt-6 grid gap-6 lg:grid-cols-5">
+  <section class="carte p-5 sm:p-6 lg:col-span-3">
+    <h2 class="text-lg font-semibold text-marine-900">Informations déclarées</h2>
+    <dl class="mt-3 divide-y divide-slate-100">
+      {{ champ_info("IMEI", d.imei|imei, mono=true) }}
+      {{ champ_info("Appareil", d.marque ~ " " ~ d.modele ~ " (" ~ d.couleur ~ ")") }}
+      {{ champ_info("Nature", TYPES_EVENEMENT[d.type_evenement]) }}
+      {{ champ_info("Date de l'événement", d.date_evenement|date_longue) }}
+      {{ champ_info("Commune", d.commune ~ " (" ~ d.region ~ ")") }}
+      {{ champ_info("Récépissé de plainte", d.numero_recepisse, mono=true) }}
+      {{ champ_info("Déposée le", d.soumis_le|date_heure ~ " (GMT)") }}
+    </dl>
+  </section>
+  <section class="carte p-5 sm:p-6 lg:col-span-2">
+    <h2 class="mb-4 text-lg font-semibold text-marine-900">Historique</h2>
+    {{ chronologie(historique) }}
+  </section>
+</div>
+{% endblock %}

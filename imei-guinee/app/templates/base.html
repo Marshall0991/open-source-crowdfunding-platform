@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block titre %}Accueil{% endblock %} · IMEI Guinée — Démonstrateur</title>
+  <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+  {# Tailwind via CDN ; copie locale de secours si le réseau est indisponible pendant la démonstration. #}
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.13" onload="window.__twCdn=true"></script>
+  <script>window.__twCdn || document.write('<script src="/static/vendor/tailwindcss-browser-4.1.13.js"><\/script>');</script>
+  <style type="text/tailwindcss">
+    @theme {
+      --color-marine-950: #071A33;
+      --color-marine-900: #0B2545;
+      --color-marine-800: #13315C;
+      --color-marine-700: #1D4475;
+      --color-marine-600: #2B5A94;
+      --color-marine-200: #C9D6E8;
+      --color-marine-100: #E3EAF4;
+      --color-marine-50: #F2F5FA;
+      --color-gn-rouge: #CE1126;
+      --color-gn-jaune: #FCD116;
+      --color-gn-vert: #009460;
+      --color-st-soumis: #D97706;
+      --color-st-valide: #2B6CB0;
+      --color-st-rejete: #8E5BB5;
+    }
+    @layer base {
+      a { @apply underline-offset-2; }
+      :focus-visible { @apply outline-3 outline-offset-2 outline-gn-jaune; }
+    }
+    @layer components {
+      .carte { @apply rounded-xl bg-white shadow-sm ring-1 ring-slate-200; }
+      .btn-primaire { @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-base font-semibold transition-colors bg-marine-900 text-white hover:bg-marine-700; }
+      .btn-secondaire { @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-base font-semibold transition-colors bg-white text-marine-900 ring-1 ring-marine-200 hover:bg-marine-50; }
+      .btn-valider { @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-base font-semibold transition-colors bg-emerald-700 text-white hover:bg-emerald-800; }
+      .btn-rejeter { @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-base font-semibold transition-colors bg-white text-red-800 ring-1 ring-red-300 hover:bg-red-50; }
+      .champ { @apply block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 placeholder:text-slate-400 focus:border-marine-600 focus:ring-2 focus:ring-marine-200 focus:outline-none; }
+      .champ-erreur { @apply border-red-600 ring-1 ring-red-200; }
+      .etiquette { @apply mb-1 block text-sm font-semibold text-slate-800; }
+      .aide { @apply mt-1 text-sm text-slate-500; }
+      .erreur { @apply mt-1 text-sm font-medium text-red-700; }
+      .lien { @apply font-medium text-marine-700 underline hover:text-marine-900; }
+    }
+  </style>
+</head>
+<body class="flex min-h-screen flex-col bg-marine-50 text-slate-800 antialiased">
+  <a href="#contenu" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-2 focus:rounded focus:bg-white focus:px-3 focus:py-2">Aller au contenu</a>
+
+  {% set liens = [("/", "Vérifier un IMEI")] %}
+  {% if utilisateur and utilisateur.role == "AGENT" %}
+    {% set liens = liens + [("/agent", "Espace agent")] %}
+  {% elif utilisateur %}
+    {% set liens = liens + [("/espace/declarer", "Déclarer un appareil"), ("/espace", "Mes déclarations")] %}
+  {% else %}
+    {% set liens = liens + [("/espace/declarer", "Déclarer un appareil")] %}
+  {% endif %}
+  {% set liens = liens + [("/tableau-de-bord", "Tableau de bord"), ("/a-propos", "À propos")] %}
+
+  {% macro lien_nav(href, libelle, mobile=false) -%}
+    {%- set actif = (chemin == href) or (href not in ["/", "/espace"] and chemin.startswith(href)) or (href == "/espace" and chemin.startswith("/espace/declarations")) -%}
+    <a href="{{ href }}" {% if actif %}aria-current="page"{% endif %}
+       class="{% if mobile %}block rounded-md px-3 py-3 text-base{% else %}rounded-md px-3 py-2 text-sm{% endif %} font-medium no-underline {% if actif %}bg-white/15 text-white{% else %}text-marine-100 hover:bg-white/10 hover:text-white{% endif %}">{{ libelle }}</a>
+  {%- endmacro %}
+
+  <header class="bg-marine-900 text-white shadow">
+    <div class="flex h-1.5" aria-hidden="true">
+      <span class="flex-1 bg-gn-rouge"></span><span class="flex-1 bg-gn-jaune"></span><span class="flex-1 bg-gn-vert"></span>
+    </div>
+    <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
+      <a href="/" class="flex min-w-0 items-center gap-3 text-white no-underline">
+        <img src="/static/logo.svg" alt="" class="size-10 shrink-0 sm:size-12">
+        <span class="min-w-0">
+          <span class="block text-lg font-bold leading-tight sm:text-2xl">IMEI Guinée <span class="font-normal text-marine-200">— Démonstrateur</span></span>
+          <span class="block truncate text-xs text-marine-200 sm:text-sm">Registre national des téléphones déclarés volés ou perdus</span>
+        </span>
+      </a>
+      <span class="ml-auto hidden shrink-0 rounded-full border border-gn-jaune/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gn-jaune md:inline-block">Données fictives</span>
+
+      {# Menu mobile sans JavaScript #}
+      <details class="relative ml-auto md:hidden">
+        <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold ring-1 ring-white/30 [&::-webkit-details-marker]:hidden">
+          <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          Menu
+        </summary>
+        <nav class="absolute right-0 z-40 mt-2 w-64 rounded-xl bg-marine-800 p-2 shadow-xl ring-1 ring-white/10" aria-label="Navigation principale">
+          {% for href, libelle in liens %}{{ lien_nav(href, libelle, true) }}{% endfor %}
+          <div class="mt-2 border-t border-white/10 pt-2">
+            {% if utilisateur %}
+              <p class="px-3 py-1 text-xs text-marine-200">Connecté(e) : {{ utilisateur.nom_complet }}</p>
+              <form method="post" action="/deconnexion">
+                <input type="hidden" name="csrf" value="{{ csrf }}">
+                <button class="block w-full rounded-md px-3 py-3 text-left text-base font-medium text-marine-100 hover:bg-white/10">Se déconnecter</button>
+              </form>
+            {% else %}
+              {{ lien_nav("/connexion", "Se connecter", true) }}
+            {% endif %}
+          </div>
+        </nav>
+      </details>
+    </div>
+
+    <div class="hidden border-t border-white/10 md:block">
+      <div class="mx-auto flex max-w-6xl items-center gap-1 px-4 py-1.5">
+        <nav class="flex items-center gap-1" aria-label="Navigation principale">
+          {% for href, libelle in liens %}{{ lien_nav(href, libelle) }}{% endfor %}
+        </nav>
+        <div class="ml-auto flex items-center gap-3">
+          {% if utilisateur %}
+            <span class="text-sm text-marine-200">
+              {{ utilisateur.nom_complet }}
+              <span class="ml-1 rounded bg-white/10 px-1.5 py-0.5 text-xs text-white">{{ "Agent de police" if utilisateur.role == "AGENT" else "Victime" }}</span>
+            </span>
+            <form method="post" action="/deconnexion">
+              <input type="hidden" name="csrf" value="{{ csrf }}">
+              <button class="rounded-md px-3 py-2 text-sm font-medium text-marine-100 ring-1 ring-white/25 hover:bg-white/10 hover:text-white">Se déconnecter</button>
+            </form>
+          {% else %}
+            {{ lien_nav("/connexion", "Se connecter") }}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenu" class="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">
+    {% for f in flashes %}
+      <div role="status" class="mb-5 flex items-start gap-3 rounded-lg border-l-4 px-4 py-3 text-base
+        {% if f.categorie == 'succes' %}border-emerald-600 bg-emerald-50 text-emerald-900{% else %}border-marine-600 bg-marine-100 text-marine-900{% endif %}">
+        <svg class="mt-0.5 size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          {% if f.categorie == 'succes' %}<path d="M5 13l4 4L19 7"/>{% else %}<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>{% endif %}
+        </svg>
+        <p>{{ f.message }}</p>
+      </div>
+    {% endfor %}
+    {% block contenu %}{% endblock %}
+  </main>
+
+  <footer class="mt-8 bg-marine-950 text-marine-200">
+    <div class="mx-auto max-w-6xl px-4 py-6 text-sm">
+      <p class="font-semibold text-white">IMEI Guinée — Démonstrateur</p>
+      <p class="mt-1">Maquette fonctionnelle préparée pour présentation à l'ARPT, aux opérateurs de téléphonie et à la Police nationale.
+        Ce démonstrateur ne constitue pas un service officiel. Toutes les données sont fictives.
+        Aucune connexion aux réseaux de télécommunications n'est établie.</p>
+      <p class="mt-2"><a href="/a-propos" class="text-white underline">À propos du dispositif</a> · <a href="/docs" class="text-white underline">Documentation de l'API</a></p>
+    </div>
+  </footer>
+</body>
+</html>

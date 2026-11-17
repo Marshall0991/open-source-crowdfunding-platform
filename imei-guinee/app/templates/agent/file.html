@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block titre %}Espace agent{% endblock %}
+{% block contenu %}
+<div class="flex flex-col gap-1">
+  <p class="text-sm font-semibold uppercase tracking-wider text-marine-600">Police nationale · {{ utilisateur.unite }}</p>
+  <h1 class="text-2xl font-bold text-marine-900 sm:text-3xl">Espace agent</h1>
+</div>
+
+<div class="mt-5 flex gap-2 border-b border-slate-200" role="tablist">
+  {% for code, href, libelle in [("attente", "/agent", "En attente (" ~ nb_attente ~ ")"), ("traitees", "/agent/traitees", "Déclarations traitées")] %}
+    <a href="{{ href }}" role="tab" aria-selected="{{ 'true' if onglet == code else 'false' }}"
+       class="-mb-px border-b-2 px-4 py-2.5 text-base font-semibold no-underline {% if onglet == code %}border-marine-900 text-marine-900{% else %}border-transparent text-slate-500 hover:text-marine-800{% endif %}">{{ libelle }}</a>
+  {% endfor %}
+</div>
+
+{% if onglet == "attente" %}
+  <p class="mt-4 text-base text-slate-600">Déclarations à examiner, de la plus ancienne à la plus récente. Contrôlez la concordance du récépissé de plainte avant toute validation.</p>
+{% else %}
+  <p class="mt-4 text-base text-slate-600">Les 50 dernières déclarations validées ou rejetées.</p>
+{% endif %}
+
+{% if declarations %}
+  <ul class="mt-4 space-y-3">
+    {% for d in declarations %}
+      <li class="carte flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:p-5">
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <p class="text-sm font-semibold text-marine-700">{{ d.reference }}</p>
+            {{ badge(d.statut) }}
+          </div>
+          <p class="mt-1 text-lg font-semibold text-slate-900">{{ d.marque }} {{ d.modele }} <span class="font-normal text-slate-500">· {{ d.couleur }}</span></p>
+          <p class="font-mono text-sm tracking-wide text-slate-600">IMEI {{ d.imei|imei }}</p>
+          <p class="text-sm text-slate-600">
+            {{ TYPES_EVENEMENT[d.type_evenement] }} · {{ d.commune }} · le {{ d.date_evenement|date_longue }} · récépissé <span class="font-mono">{{ d.numero_recepisse }}</span>
+          </p>
+          <p class="text-sm text-slate-500">
+            Déclarant : {{ d.declarant_nom }} · déposée le {{ d.soumis_le|date_heure }}
+            {% if d.traite_le %} · traitée le {{ d.traite_le|date_heure }} par {{ d.agent_nom }}{% endif %}
+          </p>
+        </div>
+        <a href="/agent/declarations/{{ d.reference }}" class="{{ 'btn-primaire' if d.statut == 'SOUMIS' else 'btn-secondaire' }} no-underline">
+          {{ "Examiner" if d.statut == "SOUMIS" else "Consulter" }}
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <div class="carte mt-4 p-8 text-center">
+    <p class="text-lg font-semibold text-slate-900">{{ "Aucune déclaration en attente" if onglet == "attente" else "Aucune déclaration traitée" }}</p>
+    <p class="mt-1 text-base text-slate-600">{{ "Toutes les déclarations ont été traitées." if onglet == "attente" else "" }}</p>
+  </div>
+{% endif %}
+{% endblock %}

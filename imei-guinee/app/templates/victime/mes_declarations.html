@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block titre %}Mes déclarations{% endblock %}
+{% block contenu %}
+<div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <div>
+    <h1 class="text-2xl font-bold text-marine-900 sm:text-3xl">Mes déclarations</h1>
+    <p class="mt-1 text-base text-slate-600">Suivez l'état de traitement de vos déclarations.</p>
+  </div>
+  <a href="/espace/declarer" class="btn-primaire no-underline">Déclarer un appareil</a>
+</div>
+
+{% if declarations %}
+  <ul class="mt-6 space-y-3">
+    {% for d in declarations %}
+      <li>
+        <a href="/espace/declarations/{{ d.reference }}" class="carte flex flex-col gap-3 p-4 no-underline transition hover:ring-marine-200 sm:flex-row sm:items-center sm:p-5">
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-marine-700">{{ d.reference }}</p>
+            <p class="text-lg font-semibold text-slate-900">{{ d.marque }} {{ d.modele }} <span class="font-normal text-slate-500">· {{ d.couleur }}</span></p>
+            <p class="font-mono text-sm tracking-wide text-slate-600">IMEI {{ d.imei|imei }}</p>
+            <p class="text-sm text-slate-500">{{ TYPES_EVENEMENT[d.type_evenement] }} le {{ d.date_evenement|date_longue }} à {{ d.commune }} · déposée le {{ d.soumis_le|date_heure }}</p>
+          </div>
+          {{ badge(d.statut) }}
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <div class="carte mt-6 p-8 text-center">
+    <p class="text-lg font-semibold text-slate-900">Aucune déclaration pour le moment</p>
+    <p class="mt-1 text-base text-slate-600">Après avoir déposé plainte, déclarez votre appareil pour qu'il soit signalé.</p>
+  </div>
+{% endif %}
+{% endblock %}

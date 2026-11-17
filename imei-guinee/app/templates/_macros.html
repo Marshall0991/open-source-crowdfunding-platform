@@ -1,0 +1,80 @@
+{% macro badge(statut) -%}
+  {%- set styles = {
+    "SOUMIS": ("bg-amber-50 text-amber-900 ring-amber-200", "bg-st-soumis"),
+    "VALIDE": ("bg-blue-50 text-blue-900 ring-blue-200", "bg-st-valide"),
+    "REJETE": ("bg-violet-50 text-violet-900 ring-violet-200", "bg-st-rejete"),
+  } -%}
+  {%- set s = styles.get(statut, ("bg-slate-50 text-slate-800 ring-slate-200", "bg-slate-400")) -%}
+  <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-semibold ring-1 {{ s[0] }}">
+    <span class="size-2 rounded-full {{ s[1] }}" aria-hidden="true"></span>{{ statut|statut }}
+  </span>
+{%- endmacro %}
+
+
+{% macro champ_info(libelle, valeur, mono=false) -%}
+  <div class="py-2.5 sm:grid sm:grid-cols-3 sm:gap-4">
+    <dt class="text-sm font-medium text-slate-500">{{ libelle }}</dt>
+    <dd class="mt-0.5 text-base text-slate-900 sm:col-span-2 sm:mt-0 {% if mono %}font-mono tracking-wide{% endif %}">{{ valeur }}</dd>
+  </div>
+{%- endmacro %}
+
+
+{% macro chronologie(historique) -%}
+  <ol class="relative ml-2 border-l-2 border-marine-100">
+    {% for h in historique %}
+      {%- set point = {"SOUMIS": "bg-st-soumis", "VALIDE": "bg-st-valide", "REJETE": "bg-st-rejete"}[h.statut_apres] -%}
+      <li class="relative mb-5 pl-6 last:mb-0">
+        <span class="absolute -left-[9px] top-1 size-4 rounded-full ring-4 ring-white {{ point }}" aria-hidden="true"></span>
+        <p class="text-base font-semibold text-slate-900">
+          {% if h.statut_avant %}{{ h.statut_avant|statut }} → {% endif %}{{ h.statut_apres|statut }}
+        </p>
+        <p class="text-sm text-slate-600">
+          {{ h.horodatage|date_heure }} (GMT) · par {{ h.auteur_nom }}{% if h.auteur_unite %}, {{ h.auteur_unite }}{% endif %}
+        </p>
+        {% if h.commentaire %}<p class="mt-1 text-sm text-slate-700">{{ h.commentaire }}</p>{% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+{%- endmacro %}
+
+
+{% macro mention_arpt(classe="") -%}
+  <p class="flex items-start gap-2 text-sm text-slate-700 {{ classe }}">
+    <svg class="mt-0.5 size-4 shrink-0 text-marine-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+    <span>Le blocage réseau des IMEI et les échanges avec les opérateurs <strong>nécessitent l'autorisation du régulateur (ARPT)</strong>. Ces fonctions sont simulées dans ce démonstrateur.</span>
+  </p>
+{%- endmacro %}
+
+
+{# Bouton désactivé accompagné d'une infobulle (survol, focus clavier ou toucher). #}
+{% macro bouton_desactive(libelle, infobulle, id) -%}
+  <span class="infobulle-cible group relative inline-block" tabindex="0" aria-describedby="{{ id }}" title="{{ infobulle }}">
+    <button type="button" disabled aria-disabled="true"
+            class="inline-flex cursor-not-allowed items-center gap-2 rounded-lg bg-slate-200 px-5 py-3 text-base font-semibold text-slate-500 ring-1 ring-slate-300">
+      <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      {{ libelle }}
+    </button>
+    <span id="{{ id }}" role="tooltip"
+          class="infobulle invisible absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[80vw] rounded-lg bg-marine-950 px-3 py-2 text-sm text-white opacity-0 shadow-lg transition-opacity">
+      {{ infobulle }}
+    </span>
+  </span>
+{%- endmacro %}
+
+
+{% macro bloc_operateurs(etat) -%}
+  <section class="carte border-l-4 border-l-slate-400 p-5" aria-labelledby="titre-operateurs">
+    <h2 id="titre-operateurs" class="text-lg font-semibold text-marine-900">Transmission aux opérateurs et blocage réseau</h2>
+    <p class="mt-1 text-sm text-slate-600">
+      {% if etat == "VALIDE" %}Déclaration validée : dans le dispositif cible, l'IMEI serait transmis aux opérateurs pour inscription sur la liste de blocage.
+      {% else %}Disponible uniquement pour une déclaration validée.{% endif %}
+    </p>
+    <div class="mt-4 flex flex-wrap gap-3">
+      {{ bouton_desactive("Demander le blocage de l'IMEI",
+         "Fonction non disponible : le blocage réseau d'un IMEI nécessite l'autorisation du régulateur (ARPT).", "infobulle-blocage") }}
+      {{ bouton_desactive("Transmettre aux opérateurs",
+         "Fonction non disponible : les échanges avec les opérateurs nécessitent l'autorisation du régulateur (ARPT).", "infobulle-operateurs") }}
+    </div>
+    {{ mention_arpt("mt-4") }}
+  </section>
+{%- endmacro %}

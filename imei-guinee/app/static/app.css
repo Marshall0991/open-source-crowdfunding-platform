@@ -1,0 +1,5 @@
+/* Styles de secours minimaux, appliqués avant (ou sans) Tailwind. */
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #F2F5FA; color: #1e293b; }
+.infobulle-cible:hover .infobulle, .infobulle-cible:focus .infobulle, .infobulle-cible:focus-within .infobulle { visibility: visible; opacity: 1; }
+@media print { header nav, footer, .no-print { display: none !important; } }

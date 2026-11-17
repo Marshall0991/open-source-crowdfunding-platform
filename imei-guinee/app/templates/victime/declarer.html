@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block titre %}Déclarer un appareil{% endblock %}
+{% block contenu %}
+{% macro msg(champ) %}{% if erreurs.get(champ) %}<p id="err-{{ champ }}" class="erreur">{{ erreurs[champ] }}</p>{% endif %}{% endmacro %}
+{% macro cls(champ) %}champ{% if erreurs.get(champ) %} champ-erreur{% endif %}{% endmacro %}
+{% macro aria(champ) %}{% if erreurs.get(champ) %}aria-invalid="true" aria-describedby="err-{{ champ }}"{% endif %}{% endmacro %}
+
+<div class="mx-auto max-w-3xl">
+  <nav class="mb-3 text-sm"><a href="/espace" class="lien">← Mes déclarations</a></nav>
+  <h1 class="text-2xl font-bold text-marine-900 sm:text-3xl">Déclarer un appareil volé ou perdu</h1>
+  <p class="mt-2 text-base text-slate-600">
+    Votre déclaration sera examinée par un agent de la Police nationale. L'IMEI n'apparaîtra comme « Signalé »
+    lors des vérifications publiques qu'après validation.
+  </p>
+
+  {% if erreur_generale %}
+    <div role="alert" class="mt-5 rounded-lg border-l-4 border-red-600 bg-red-50 px-4 py-3 text-base text-red-900">
+      {{ erreur_generale }}
+    </div>
+  {% endif %}
+
+  <form method="post" action="/espace/declarer" class="mt-6 space-y-6" novalidate>
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+
+    <fieldset class="carte p-5 sm:p-6">
+      <legend class="sr-only">Appareil</legend>
+      <h2 class="text-lg font-semibold text-marine-900">1. Appareil</h2>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <div class="sm:col-span-2">
+          <label for="imei" class="etiquette">Numéro IMEI <span class="font-normal text-slate-500">(15 chiffres)</span></label>
+          <input id="imei" name="imei" inputmode="numeric" autocomplete="off" maxlength="25" required
+                 value="{{ valeurs.get('imei', '') }}" class="{{ cls('imei') }} font-mono text-lg tracking-widest" {{ aria('imei') }}>
+          {{ msg('imei') }}
+          <p class="aide">Composez *#06# sur l'appareil, ou reportez le numéro inscrit sur la boîte d'origine ou la facture. Pour un téléphone double SIM, indiquez le premier IMEI.</p>
+        </div>
+        <div>
+          <label for="marque" class="etiquette">Marque</label>
+          <input id="marque" name="marque" list="liste-marques" maxlength="40" required
+                 value="{{ valeurs.get('marque', '') }}" class="{{ cls('marque') }}" {{ aria('marque') }}>
+          <datalist id="liste-marques">{% for m in marques %}<option value="{{ m }}">{% endfor %}</datalist>
+          {{ msg('marque') }}
+        </div>
+        <div>
+          <label for="modele" class="etiquette">Modèle</label>
+          <input id="modele" name="modele" maxlength="60" required placeholder="Ex. Galaxy A15"
+                 value="{{ valeurs.get('modele', '') }}" class="{{ cls('modele') }}" {{ aria('modele') }}>
+          {{ msg('modele') }}
+        </div>
+        <div>
+          <label for="couleur" class="etiquette">Couleur</label>
+          <input id="couleur" name="couleur" list="liste-couleurs" maxlength="30" required
+                 value="{{ valeurs.get('couleur', '') }}" class="{{ cls('couleur') }}" {{ aria('couleur') }}>
+          <datalist id="liste-couleurs">{% for c in couleurs %}<option value="{{ c }}">{% endfor %}</datalist>
+          {{ msg('couleur') }}
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="carte p-5 sm:p-6">
+      <legend class="sr-only">Événement</legend>
+      <h2 class="text-lg font-semibold text-marine-900">2. Événement</h2>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <div class="sm:col-span-2">
+          <span class="etiquette">Nature de l'événement</span>
+          <div class="flex flex-wrap gap-3">
+            {% for code, libelle in TYPES_EVENEMENT.items() %}
+              <label class="flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2.5 ring-1 ring-slate-300 has-[:checked]:bg-marine-50 has-[:checked]:ring-2 has-[:checked]:ring-marine-700">
+                <input type="radio" name="type_evenement" value="{{ code }}" class="size-4 accent-marine-900"
+                       {% if valeurs.get('type_evenement') == code %}checked{% endif %}>
+                <span class="text-base font-medium">{{ libelle }}</span>
+              </label>
+            {% endfor %}
+          </div>
+          {{ msg('type_evenement') }}
+        </div>
+        <div>
+          <label for="date_evenement" class="etiquette">Date du vol ou de la perte</label>
+          <input id="date_evenement" name="date_evenement" type="date" max="{{ aujourd_hui }}" min="2000-01-01" required
+                 value="{{ valeurs.get('date_evenement', '') }}" class="{{ cls('date_evenement') }}" {{ aria('date_evenement') }}>
+          {{ msg('date_evenement') }}
+        </div>
+        <div>
+          <label for="commune_id" class="etiquette">Commune</label>
+          <select id="commune_id" name="commune_id" required class="{{ cls('commune_id') }}" {{ aria('commune_id') }}>
+            <option value="">— Sélectionnez une commune —</option>
+            {% for region, liste in communes|groupby('region') %}
+              <optgroup label="{{ region }}">
+                {% for c in liste %}
+                  <option value="{{ c.id }}" {% if valeurs.get('commune_id')|string == c.id|string %}selected{% endif %}>{{ c.nom }}</option>
+                {% endfor %}
+              </optgroup>
+            {% endfor %}
+          </select>
+          {{ msg('commune_id') }}
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="carte p-5 sm:p-6">
+      <legend class="sr-only">Plainte</legend>
+      <h2 class="text-lg font-semibold text-marine-900">3. Plainte</h2>
+      <div class="mt-4">
+        <label for="numero_recepisse" class="etiquette">Numéro du récépissé de plainte ou de déclaration de perte</label>
+        <input id="numero_recepisse" name="numero_recepisse" maxlength="40" required placeholder="Ex. PV-KAL-2026-0412"
+               value="{{ valeurs.get('numero_recepisse', '') }}" class="{{ cls('numero_recepisse') }} font-mono" {{ aria('numero_recepisse') }}>
+        {{ msg('numero_recepisse') }}
+        <p class="aide">Numéro figurant sur le récépissé remis par le commissariat ou la brigade. Il sera contrôlé par l'agent chargé de la validation.</p>
+      </div>
+      <label class="mt-5 flex items-start gap-3 text-base">
+        <input type="checkbox" name="attestation" value="1" class="mt-1 size-5 shrink-0 accent-marine-900"
+               {% if valeurs.get('attestation') %}checked{% endif %} {{ aria('attestation') }}>
+        <span>J'atteste sur l'honneur l'exactitude des informations fournies et reconnais qu'une fausse déclaration m'expose à des poursuites.</span>
+      </label>
+      {{ msg('attestation') }}
+    </fieldset>
+
+    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      <a href="/espace" class="btn-secondaire no-underline">Annuler</a>
+      <button type="submit" class="btn-primaire">Envoyer la déclaration</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
