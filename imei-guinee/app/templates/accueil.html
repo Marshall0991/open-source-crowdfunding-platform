@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block titre %}Vérifier un IMEI{% endblock %}
+{% block contenu %}
+<div class="grid gap-6 lg:grid-cols-5">
+  <section class="carte p-5 sm:p-8 lg:col-span-3" aria-labelledby="titre-verif">
+    <h1 id="titre-verif" class="text-2xl font-bold text-marine-900 sm:text-3xl">Vérifier un téléphone</h1>
+    <p class="mt-2 text-base text-slate-600 sm:text-lg">
+      Avant d'acheter un téléphone d'occasion, vérifiez qu'il n'a pas été déclaré volé ou perdu.
+      Ce service est gratuit et ne nécessite pas de compte.
+    </p>
+
+    {% if resultat %}
+      <div id="resultat" class="mt-6" role="status" aria-live="polite">
+        {% if resultat.etat == "SIGNALE" %}
+          <div class="rounded-xl border-2 border-red-700 bg-red-50 p-5 sm:p-6">
+            <div class="flex items-center gap-4">
+              <svg class="size-12 shrink-0 text-red-700 sm:size-14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5M12 18h.01"/></svg>
+              <div>
+                <p class="text-sm font-semibold uppercase tracking-wider text-red-800">Résultat de la vérification</p>
+                <p class="text-3xl font-extrabold text-red-800 sm:text-4xl">Signalé</p>
+              </div>
+            </div>
+            <p class="mt-3 font-mono text-lg tracking-wider text-slate-900">IMEI {{ resultat.imei|imei }}</p>
+            <p class="mt-3 text-base text-slate-800">
+              Cet appareil fait l'objet d'une déclaration de vol ou de perte <strong>validée par la Police nationale</strong>.
+              Ne l'achetez pas. Si l'on vous propose cet appareil, signalez-le au commissariat le plus proche.
+            </p>
+          </div>
+        {% elif resultat.etat == "NON_SIGNALE" %}
+          <div class="rounded-xl border-2 border-emerald-700 bg-emerald-50 p-5 sm:p-6">
+            <div class="flex items-center gap-4">
+              <svg class="size-12 shrink-0 text-emerald-700 sm:size-14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+              <div>
+                <p class="text-sm font-semibold uppercase tracking-wider text-emerald-800">Résultat de la vérification</p>
+                <p class="text-3xl font-extrabold text-emerald-800 sm:text-4xl">Non signalé</p>
+              </div>
+            </div>
+            <p class="mt-3 font-mono text-lg tracking-wider text-slate-900">IMEI {{ resultat.imei|imei }}</p>
+            <p class="mt-3 text-base text-slate-800">
+              Aucune déclaration validée ne concerne cet IMEI à ce jour.
+              Ce résultat ne constitue pas une garantie sur l'origine de l'appareil : demandez toujours une facture ou un justificatif au vendeur.
+            </p>
+          </div>
+        {% elif resultat.etat == "INVALIDE" %}
+          <div class="rounded-xl border-2 border-amber-600 bg-amber-50 p-5">
+            <p class="text-lg font-bold text-amber-900">Numéro IMEI non valide</p>
+            <p class="mt-1 text-base text-amber-950">{{ resultat.erreur }}</p>
+          </div>
+        {% elif resultat.etat == "LIMITE" %}
+          <div class="rounded-xl border-2 border-amber-600 bg-amber-50 p-5">
+            <p class="text-lg font-bold text-amber-900">Trop de vérifications</p>
+            <p class="mt-1 text-base text-amber-950">
+              Par mesure de protection, le nombre de vérifications est limité. Veuillez patienter
+              {{ resultat.attente }} seconde{{ "s" if resultat.attente > 1 }} avant de réessayer.
+            </p>
+          </div>
+        {% endif %}
+        {% if resultat.etat in ("SIGNALE", "NON_SIGNALE") %}
+          <p class="mt-2 text-sm text-slate-500">Vérification effectuée le {{ verifie_le|date_heure }} (GMT).</p>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <form method="post" action="/verifier#resultat" class="mt-6" novalidate>
+      <label for="imei" class="etiquette text-base">Numéro IMEI <span class="font-normal text-slate-500">(15 chiffres)</span></label>
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <input id="imei" name="imei" type="text" inputmode="numeric" autocomplete="off" maxlength="25"
+               placeholder="15 chiffres"
+               value="{{ saisie if resultat and resultat.etat == 'INVALIDE' else '' }}"
+               aria-describedby="aide-imei"
+               class="champ font-mono text-xl tracking-widest placeholder:font-sans placeholder:tracking-normal placeholder:text-lg sm:text-2xl {% if resultat and resultat.etat == 'INVALIDE' %}champ-erreur{% endif %}"
+               {% if not resultat %}autofocus{% endif %}>
+        <button type="submit" class="btn-primaire px-8 text-lg">Vérifier</button>
+      </div>
+      <p id="aide-imei" class="aide">
+        Pour afficher l'IMEI, composez <strong class="font-mono text-slate-700">*#06#</strong> sur le téléphone.
+        Il figure aussi sur la boîte d'origine. Les espaces et tirets sont acceptés.
+      </p>
+    </form>
+
+    <p class="mt-6 flex items-start gap-2 rounded-lg bg-marine-50 p-3 text-sm text-slate-600">
+      <svg class="mt-0.5 size-4 shrink-0 text-marine-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3Z"/></svg>
+      La réponse se limite à « Signalé » ou « Non signalé ». Aucune donnée personnelle n'est communiquée.
+    </p>
+
+    {% if afficher_comptes_demo %}
+      <details class="mt-4 rounded-lg border border-dashed border-marine-200 p-3 text-sm">
+        <summary class="cursor-pointer font-semibold text-marine-800">Aide à la démonstration : IMEI de test</summary>
+        <ul class="mt-2 space-y-1 font-mono text-slate-700">
+          <li><span class="font-sans text-slate-500">Signalé (validé) :</span> {{ imei_demo.signale }}</li>
+          <li><span class="font-sans text-slate-500">En attente (non encore signalé) :</span> {{ imei_demo.en_attente }}</li>
+          <li><span class="font-sans text-slate-500">Libre, à déclarer :</span> {{ imei_demo.libre }}</li>
+          <li><span class="font-sans text-slate-500">Clé de contrôle fausse :</span> {{ imei_demo.cle_fausse }}</li>
+        </ul>
+      </details>
+    {% endif %}
+  </section>
+
+  <aside class="space-y-6 lg:col-span-2">
+    <section class="carte p-5 sm:p-6">
+      <h2 class="text-lg font-semibold text-marine-900">Votre téléphone a été volé ou perdu ?</h2>
+      <p class="mt-2 text-base text-slate-600">
+        Après avoir déposé plainte, déclarez votre appareil en ligne avec le numéro de votre récépissé.
+        Votre déclaration sera examinée par la Police nationale.
+      </p>
+      <a href="/espace/declarer" class="btn-primaire mt-4 w-full no-underline">Déclarer un appareil</a>
+    </section>
+
+    <section class="carte p-5 sm:p-6">
+      <h2 class="text-lg font-semibold text-marine-900">Comment fonctionne le registre</h2>
+      <ol class="mt-3 space-y-4">
+        {% for titre, texte in [
+          ("Déclaration", "La victime dépose plainte, puis déclare l'IMEI de son appareil avec le numéro de récépissé."),
+          ("Validation", "Un agent de la Police nationale contrôle la déclaration et la valide ou la rejette."),
+          ("Vérification", "Une fois validé, l'IMEI apparaît « Signalé » pour toute personne qui le vérifie."),
+        ] %}
+          <li class="flex gap-3">
+            <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-marine-900 text-sm font-bold text-white">{{ loop.index }}</span>
+            <div><p class="font-semibold text-slate-900">{{ titre }}</p><p class="text-sm text-slate-600">{{ texte }}</p></div>
+          </li>
+        {% endfor %}
+      </ol>
+      <a href="/a-propos" class="lien mt-4 inline-block text-sm">En savoir plus sur le dispositif</a>
+    </section>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block titre %}Connexion{% endblock %}
+{% block contenu %}
+<div class="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
+  <section class="carte p-5 sm:p-8">
+    <h1 class="text-2xl font-bold text-marine-900">Connexion</h1>
+    <p class="mt-1 text-base text-slate-600">Accès réservé aux victimes déclarantes et aux agents de la Police nationale.</p>
+
+    {% if erreur %}
+      <div role="alert" class="mt-4 rounded-lg border-l-4 border-red-600 bg-red-50 px-4 py-3 text-base text-red-900">{{ erreur }}</div>
+    {% endif %}
+
+    <form method="post" action="/connexion" class="mt-6 space-y-4">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="suivant" value="{{ suivant or '' }}">
+      <div>
+        <label for="identifiant" class="etiquette">Identifiant</label>
+        <input id="identifiant" name="identifiant" class="champ" autocomplete="username" autocapitalize="none" required value="{{ identifiant or '' }}">
+      </div>
+      <div>
+        <label for="mot_de_passe" class="etiquette">Mot de passe</label>
+        <input id="mot_de_passe" name="mot_de_passe" type="password" class="champ" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn-primaire w-full">Se connecter</button>
+    </form>
+  </section>
+
+  {% if afficher_comptes_demo %}
+    <section class="carte border-2 border-dashed border-marine-200 p-5 sm:p-8" aria-labelledby="titre-demo">
+      <h2 id="titre-demo" class="text-lg font-semibold text-marine-900">Comptes de démonstration</h2>
+      <p class="mt-1 text-sm text-slate-600">Authentification simplifiée, propre au démonstrateur. Touchez un compte pour remplir le formulaire.</p>
+      <ul class="mt-4 space-y-3">
+        {% for c in comptes %}
+          <li>
+            <button type="button" data-identifiant="{{ c.identifiant }}" data-mdp="{{ c.mot_de_passe }}"
+                    class="remplir w-full rounded-lg bg-marine-50 p-3 text-left ring-1 ring-marine-100 hover:bg-marine-100">
+              <span class="flex items-center justify-between gap-2">
+                <span class="font-semibold text-slate-900">{{ c.nom }}</span>
+                <span class="rounded bg-marine-900 px-2 py-0.5 text-xs font-semibold text-white">{{ c.role }}</span>
+              </span>
+              <span class="mt-1 block font-mono text-sm text-slate-600">{{ c.identifiant }} / {{ c.mot_de_passe }}</span>
+            </button>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+    <script>
+      document.querySelectorAll("button.remplir").forEach(function (b) {
+        b.addEventListener("click", function () {
+          document.getElementById("identifiant").value = b.dataset.identifiant;
+          document.getElementById("mot_de_passe").value = b.dataset.mdp;
+          document.querySelector("form button[type=submit]").focus();
+        });
+      });
+    </script>
+  {% endif %}
+</div>
+{% endblock %}

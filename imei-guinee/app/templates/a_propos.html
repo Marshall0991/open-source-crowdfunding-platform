@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% from "_macros.html" import bouton_desactive %}
+{% block titre %}À propos{% endblock %}
+{% block contenu %}
+<div class="mx-auto max-w-4xl space-y-6">
+  <header>
+    <h1 class="text-2xl font-bold text-marine-900 sm:text-3xl">À propos du dispositif</h1>
+    <p class="mt-2 text-base text-slate-600 sm:text-lg">
+      IMEI Guinée est un démonstrateur de registre national des téléphones déclarés volés ou perdus.
+      Il illustre l'architecture et le parcours des usagers. Ce n'est pas le système de production.
+    </p>
+  </header>
+
+  <section class="rounded-xl border-2 border-marine-900 bg-white p-5 sm:p-6" aria-labelledby="titre-arpt">
+    <h2 id="titre-arpt" class="flex items-center gap-2 text-lg font-bold text-marine-900">
+      <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      Blocage réseau : autorisation de l'ARPT requise
+    </h2>
+    <p class="mt-2 text-base text-slate-700">
+      Le blocage effectif d'un IMEI sur les réseaux mobiles et les échanges de données avec les opérateurs
+      <strong>nécessitent l'autorisation de l'Autorité de régulation des postes et télécommunications (ARPT)</strong>
+      et un cadre juridique et technique à définir avec elle. Dans ce démonstrateur, ces fonctions sont
+      <strong>simulées</strong> : les boutons correspondants sont présents mais désactivés.
+    </p>
+    <div class="mt-4">
+      {{ bouton_desactive("Demander le blocage de l'IMEI",
+         "Fonction non disponible : le blocage réseau d'un IMEI nécessite l'autorisation du régulateur (ARPT).", "infobulle-apropos") }}
+    </div>
+  </section>
+
+  <section class="carte p-5 sm:p-6">
+    <h2 class="text-lg font-semibold text-marine-900">Fonctionnement</h2>
+    <ol class="mt-4 grid gap-4 sm:grid-cols-3">
+      {% for titre, texte in [
+        ("1. Déclaration", "La victime dépose plainte au commissariat, puis déclare en ligne l'IMEI de son appareil avec le numéro de récépissé. La déclaration reçoit le statut « Soumis »."),
+        ("2. Validation", "Un agent de la Police nationale contrôle le récépissé et valide ou rejette la déclaration, avec un motif en cas de rejet. Chaque étape est horodatée et attribuée à son auteur."),
+        ("3. Vérification", "Toute personne peut vérifier un IMEI. La réponse est « Signalé » uniquement si une déclaration a été validée, « Non signalé » dans tous les autres cas."),
+      ] %}
+        <li class="rounded-lg bg-marine-50 p-4">
+          <p class="font-semibold text-marine-900">{{ titre }}</p>
+          <p class="mt-1 text-sm text-slate-700">{{ texte }}</p>
+        </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <section class="carte p-5 sm:p-6">
+    <h2 class="text-lg font-semibold text-marine-900">Rôle de chaque acteur</h2>
+    <dl class="mt-3 divide-y divide-slate-100">
+      {% for acteur, role in [
+        ("Victime", "Dépose plainte, déclare son appareil en ligne et suit l'état de sa déclaration."),
+        ("Police nationale", "Contrôle les déclarations au regard des plaintes enregistrées et décide de leur validation. Seule une déclaration validée rend un IMEI « Signalé »."),
+        ("ARPT", "Autorité de régulation : fixe le cadre du dispositif et autorise, le cas échéant, le blocage réseau des IMEI et les échanges avec les opérateurs."),
+        ("Opérateurs de téléphonie", "Dans le dispositif cible et sous l'autorité de l'ARPT, consulteraient le registre et appliqueraient les mesures décidées. Aucune connexion n'est établie dans ce démonstrateur."),
+        ("Public et commerçants", "Vérifient gratuitement un IMEI avant un achat d'occasion, sans compte et sans accès à aucune donnée personnelle."),
+      ] %}
+        <div class="py-3 sm:grid sm:grid-cols-4 sm:gap-4">
+          <dt class="font-semibold text-slate-900">{{ acteur }}</dt>
+          <dd class="mt-1 text-base text-slate-700 sm:col-span-3 sm:mt-0">{{ role }}</dd>
+        </div>
+      {% endfor %}
+    </dl>
+  </section>
+
+  <div class="grid gap-6 md:grid-cols-2">
+    <section class="carte p-5 sm:p-6">
+      <h2 class="text-lg font-semibold text-marine-900">Ce que fait le démonstrateur</h2>
+      <ul class="mt-3 list-disc space-y-1.5 pl-5 text-base text-slate-700">
+        <li>Déclaration d'un appareil volé ou perdu, avec contrôle de l'IMEI (algorithme de Luhn) et détection des doublons</li>
+        <li>Validation ou rejet motivé par un agent de police</li>
+        <li>Vérification publique « Signalé » / « Non signalé », avec limitation du débit</li>
+        <li>Historique horodaté de chaque déclaration</li>
+        <li>Tableau de bord statistique agrégé</li>
+        <li>Interface de programmation (API) de vérification, documentée sur <a href="/docs" class="lien">/docs</a></li>
+      </ul>
+    </section>
+    <section class="carte p-5 sm:p-6">
+      <h2 class="text-lg font-semibold text-marine-900">Ce qu'il ne fait pas</h2>
+      <ul class="mt-3 list-disc space-y-1.5 pl-5 text-base text-slate-700">
+        <li>Aucune géolocalisation d'appareil</li>
+        <li>Aucun suivi par numéro de téléphone</li>
+        <li>Aucune connexion aux réseaux de télécommunications</li>
+        <li>Aucun blocage réel d'IMEI</li>
+        <li>Aucune donnée réelle : personnes, plaintes et IMEI sont fictifs</li>
+      </ul>
+    </section>
+  </div>
+
+  <section class="carte p-5 sm:p-6">
+    <h2 class="text-lg font-semibold text-marine-900">Protection des données</h2>
+    <ul class="mt-3 list-disc space-y-1.5 pl-5 text-base text-slate-700">
+      <li>La vérification publique ne renvoie qu'une réponse binaire, sans marque, commune, date ni identité.</li>
+      <li>Le journal des vérifications ne conserve ni l'IMEI consulté ni l'adresse de l'utilisateur.</li>
+      <li>Une victime n'accède qu'à ses propres déclarations. Les données nominatives ne sont visibles que des agents habilités.</li>
+      <li>Chaque changement de statut est tracé : auteur, date et heure, motif.</li>
+    </ul>
+    <p class="mt-3 text-sm text-slate-500">Le cadre applicable (protection des données personnelles, durée de conservation, habilitations) serait à préciser avec les autorités compétentes avant toute mise en production.</p>
+  </section>
+</div>
+{% endblock %}

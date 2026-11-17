@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, champ_info, chronologie, bloc_operateurs %}
+{% block titre %}Examen {{ d.reference }}{% endblock %}
+{% block contenu %}
+<nav class="mb-3 text-sm"><a href="{{ '/agent' if d.statut == 'SOUMIS' else '/agent/traitees' }}" class="lien">← Retour à la liste</a></nav>
+<div class="flex flex-wrap items-center gap-3">
+  <h1 class="text-2xl font-bold text-marine-900 sm:text-3xl">Déclaration {{ d.reference }}</h1>
+  {{ badge(d.statut) }}
+</div>
+
+{% if erreur %}
+  <div role="alert" class="mt-4 rounded-lg border-l-4 border-red-600 bg-red-50 px-4 py-3 text-base text-red-900">{{ erreur }}</div>
+{% endif %}
+
+<div class="mt-6 grid gap-6 lg:grid-cols-5">
+  <div class="space-y-6 lg:col-span-3">
+    <section class="carte p-5 sm:p-6">
+      <h2 class="text-lg font-semibold text-marine-900">Déclaration</h2>
+      <dl class="mt-3 divide-y divide-slate-100">
+        {{ champ_info("Déclarant", d.declarant_nom ~ " (compte « " ~ d.declarant_identifiant ~ " »)") }}
+        {{ champ_info("IMEI", d.imei|imei, mono=true) }}
+        {{ champ_info("Appareil", d.marque ~ " " ~ d.modele ~ " (" ~ d.couleur ~ ")") }}
+        {{ champ_info("Nature", TYPES_EVENEMENT[d.type_evenement]) }}
+        {{ champ_info("Date de l'événement", d.date_evenement|date_longue) }}
+        {{ champ_info("Commune", d.commune ~ " (" ~ d.region ~ ")") }}
+        {{ champ_info("Récépissé de plainte", d.numero_recepisse, mono=true) }}
+        {{ champ_info("Déposée le", d.soumis_le|date_heure ~ " (GMT)") }}
+        {% if d.traite_le %}{{ champ_info("Traitée le", d.traite_le|date_heure ~ " (GMT) par " ~ d.agent_nom) }}{% endif %}
+        {% if d.motif_rejet %}{{ champ_info("Motif du rejet", d.motif_rejet) }}{% endif %}
+      </dl>
+      {% if antecedents %}
+        <div class="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-950 ring-1 ring-amber-200">
+          <p class="font-semibold">Autres déclarations pour cet IMEI</p>
+          <ul class="mt-1 list-disc pl-5">
+            {% for a in antecedents %}<li>{{ a.reference }} · {{ a.statut|statut }} · {{ a.soumis_le|date_heure }}{% if a.motif_rejet %} · {{ a.motif_rejet }}{% endif %}</li>{% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="carte p-5 sm:p-6">
+      <h2 class="mb-4 text-lg font-semibold text-marine-900">Historique</h2>
+      {{ chronologie(historique) }}
+    </section>
+  </div>
+
+  <div class="space-y-6 lg:col-span-2">
+    {% if d.statut == "SOUMIS" %}
+      <section class="carte border-t-4 border-t-emerald-700 p-5 sm:p-6" aria-labelledby="titre-valider">
+        <h2 id="titre-valider" class="text-lg font-semibold text-marine-900">Valider la déclaration</h2>
+        <p class="mt-1 text-sm text-slate-600">Après validation, l'IMEI apparaîtra comme « Signalé » lors des vérifications publiques.</p>
+        <form method="post" action="/agent/declarations/{{ d.reference }}/valider" class="mt-4 space-y-4">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <label class="flex items-start gap-3 text-base">
+            <input type="checkbox" name="controle" value="1" required class="mt-1 size-5 shrink-0 accent-emerald-700">
+            <span>J'ai vérifié la concordance du récépissé <span class="font-mono">{{ d.numero_recepisse }}</span> avec le registre des plaintes.</span>
+          </label>
+          <button type="submit" class="btn-valider w-full">Valider</button>
+        </form>
+      </section>
+
+      <section class="carte border-t-4 border-t-red-700 p-5 sm:p-6" aria-labelledby="titre-rejeter">
+        <h2 id="titre-rejeter" class="text-lg font-semibold text-marine-900">Rejeter la déclaration</h2>
+        <form method="post" action="/agent/declarations/{{ d.reference }}/rejeter" class="mt-4 space-y-4">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <div>
+            <label for="motif" class="etiquette">Motif du rejet</label>
+            <select id="motif" name="motif" required class="champ">
+              <option value="">— Sélectionnez un motif —</option>
+              {% for m in motifs %}<option {% if valeurs.get('motif') == m %}selected{% endif %}>{{ m }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="precisions" class="etiquette">Précisions <span class="font-normal text-slate-500">(obligatoires pour « Autre motif »)</span></label>
+            <textarea id="precisions" name="precisions" rows="3" maxlength="400" class="champ">{{ valeurs.get('precisions', '') }}</textarea>
+            <p class="aide">Le motif sera communiqué au déclarant dans son espace.</p>
+          </div>
+          <button type="submit" class="btn-rejeter w-full">Rejeter</button>
+        </form>
+      </section>
+    {% else %}
+      <section class="carte p-5 sm:p-6">
+        <h2 class="text-lg font-semibold text-marine-900">Déclaration traitée</h2>
+        <p class="mt-1 text-base text-slate-600">
+          {% if d.statut == "VALIDE" %}L'IMEI est « Signalé » lors des vérifications publiques.{% else %}L'IMEI n'est pas signalé au public.{% endif %}
+          Le statut ne peut plus être modifié.
+        </p>
+      </section>
+    {% endif %}
+
+    {{ bloc_operateurs(d.statut) }}
+  </div>
+</div>
+{% endblock %}

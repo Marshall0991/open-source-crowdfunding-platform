@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block titre %}{{ titre }}{% endblock %}
+{% block contenu %}
+<section class="carte mx-auto max-w-xl p-6 text-center sm:p-10">
+  <p class="text-sm font-semibold uppercase tracking-wider text-marine-600">Erreur</p>
+  <h1 class="mt-1 text-2xl font-bold text-marine-900">{{ titre }}</h1>
+  <p class="mt-3 text-base text-slate-600">{{ message }}</p>
+  <div class="mt-6 flex flex-wrap justify-center gap-3">
+    <a href="/" class="btn-primaire no-underline">Retour à l'accueil</a>
+    {% if not utilisateur %}<a href="/connexion" class="btn-secondaire no-underline">Se connecter</a>{% endif %}
+  </div>
+</section>
+{% endblock %}
